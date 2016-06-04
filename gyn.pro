@@ -9,3 +9,10 @@ QMAKE_CXXFLAGS += -std=c++1y
 DEFINES += YES_MAIN
 
 SOURCES += main.cpp
+
+HEADERS += \
+    registers.hpp \
+    common.hpp
+
+INCLUDEPATH += $(BOOST_ROOT)
+

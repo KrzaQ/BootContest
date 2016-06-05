@@ -11,8 +11,9 @@ DEFINES += YES_MAIN
 SOURCES += main.cpp
 
 HEADERS += \
-    registers.hpp \
-    common.hpp
+    common.hpp \
+    video_buffer.hpp \
+    segmented_address.hpp
 
 INCLUDEPATH += $(BOOST_ROOT)
 

@@ -58,18 +58,6 @@ static inline void sleep(u32 us) noexcept {
 
 Keyboard keyboard;
 
-struct Ball
-{
-	float speed_horizontal;
-	float speed_vertical;
-	float x;
-	float y;
-};
-
-static inline u8 toHex(u8 c) noexcept {
-	return c < 10 ? c + '0' : c + 'A' - 10;
-}
-
 struct Brick
 {
 	u8 x;
@@ -88,46 +76,41 @@ public:
 
 	using Colour = kq::VideoBuffer::Colour;
 
-	constexpr static Entity Brick = { 'X', Colour::Green, Colour::Black };
-	constexpr static Entity Empty = { ' ', Colour::LightBlue, Colour::LightBlue };
-	constexpr static Entity Desk = { '^', Colour::Green, Colour::Black };
-	constexpr static Entity Ball = { '^', Colour::Green, Colour::Black };
+	constexpr static Entity Food = { '+', Colour::Brown, Colour::LightGreen };
+	constexpr static Entity Grass = { ' ', Colour::LightGreen, Colour::LightGreen };
+	constexpr static Entity Snake = { 'O', Colour::Black, Colour::LightGreen };
 
 
-	Game() noexcept:
-		b{0.1,0.1,40,19},
-		points(0),
-		active(false)
-	{
+	Game() noexcept {
 		screen.set_addr(0);
-		for(u16 i = 400; i --> 0;){
+//		for(u16 i = 400; i --> 0;){
+//			auto it = screen.iter();
+//			*it = Food.character;
+//			++it;
+//			*it = screen.makeCharColour(Food.foreground, Food.background);
+//			++it;
+//		}
+		for(u16 i = 1920; i --> 0;){
 			auto it = screen.iter();
-			*it = Brick.character;
+			*it = Grass.character;
 			++it;
-			*it = screen.makeCharColour(Brick.foreground, Brick.background);
-			++it;
-		}
-		for(u16 i = 1520; i --> 0;){
-			auto it = screen.iter();
-			*it = Empty.character;
-			++it;
-			*it = screen.makeCharColour(Empty.foreground, Empty.background);
+			*it = screen.makeCharColour(Grass.foreground, Grass.background);
 			++it;
 		}
 	}
 
 	void loop() noexcept {
-//		u8 n = 0;
+		bool active = false;
 		while(!active){
 			if(keyboard.getKey() == 0x39){
 				active = true;
 			}
 		}
 
-		while(true){
+		while(active){
 			sleep(16);
 
-			processBall();
+//			processBall();
 //			screen.writeChar('0' + n, 3840);
 //			n++;
 //			n = n & 0x7;
@@ -140,29 +123,25 @@ public:
 		}
 	}
 
-	bool brickAt(u8 x, u8 y) noexcept {
+	char elementAt(u8 x, u8 y) noexcept {
 		u16 addr = 160 * y + 2 * x;
-		return screen.raw_read<8>(addr) == 'X';
+		return screen.raw_read<8>(addr);
 	}
 
-	void processBall() noexcept {
-		u8 x = b.x;
-		u8 y = b.y;
-		b.x += b.speed_horizontal;
-		b.y += b.speed_vertical;
-		screen.writeChar(Empty.character, 160 * y + 2 * x, Empty.foreground, Empty.background);
-		x = b.x;
-		y = b.y;
-		screen.writeChar(Ball.character, 160 * y + 2 * x, Ball.foreground, Ball.background);
+	void processSnake() noexcept {
+//		u8 x = b.x;
+//		u8 y = b.y;
+//		b.x += b.speed_horizontal;
+//		b.y += b.speed_vertical;
+//		screen.writeChar(Grass.character, 160 * y + 2 * x, Grass.foreground, Grass.background);
+//		x = b.x;
+//		y = b.y;
+//		screen.writeChar(Ball.character, 160 * y + 2 * x, Ball.foreground, Ball.background);
 	}
 
 	void drawBall() noexcept {
 
 	}
-
-	::Ball b;
-	u16 points;
-	bool active;
 };
 
 static inline void foo()

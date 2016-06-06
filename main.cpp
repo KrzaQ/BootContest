@@ -133,9 +133,9 @@ struct MemoryEntity<Addr, Size, Elem, 1>{
 //	data.raw_write<T::size>(val, T::addr);
 //}
 
-static inline u8 toHex(u8 x) noexcept {
-	return x < 10 ? x + '0' : x - 10 + 'A';
-}
+//static inline u8 toHex(u8 x) noexcept {
+//	return x < 10 ? x + '0' : x - 10 + 'A';
+//}
 
 struct Point2D
 {
@@ -274,6 +274,8 @@ public:
 					p = Blocks.get(idx);
 					Tail.set((idx + 1) % Blocks.elements);
 					clearSnakeElement(p);
+				}else{
+					spawnFood();
 				}
 			}
 

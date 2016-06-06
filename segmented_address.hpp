@@ -23,15 +23,16 @@ struct SegmentedAddress;
 template<u16 Segment> \
 struct SegmentedAddress<Segment, SegmentRegister::segment_register, IndexRegister::index_register> \
 { \
-	struct DataProxy; \
-	struct AlmostIterator{ \
+	template <u32 Size> struct DataProxy; \
+	template <u32 Size> struct AlmostIterator{ \
+		using type = kq::sized_type<Size>; \
 \
-		DataProxy operator*() noexcept { \
+		DataProxy<Size> operator*() noexcept { \
 			return {}; \
 		} \
 \
-		u8 operator*() const noexcept { \
-			return static_cast<u8>(DataProxy{}); \
+		type operator*() const noexcept { \
+			return static_cast<type>(DataProxy<Size>{}); \
 		} \
 \
 		AlmostIterator operator++() const noexcept { \
@@ -47,14 +48,15 @@ struct SegmentedAddress<Segment, SegmentRegister::segment_register, IndexRegiste
 		bool operator==(AlmostIterator) = delete; \
 	}; \
 \
-	struct DataProxy : AlmostIterator{ \
+	template<u32 Size> \
+	struct DataProxy : AlmostIterator<Size>{ \
 \
-		void operator=(u8 value) noexcept { \
-			raw_write_impl(kq::integral_constant<8>{}, value); \
+		void operator=(typename DataProxy::type value) noexcept { \
+			raw_write_impl(kq::integral_constant<Size>{}, value); \
 		} \
 \
-		operator u8() const noexcept { \
-			return raw_read_impl(kq::integral_constant<8>{}); \
+		operator typename DataProxy::type() const noexcept { \
+			return raw_read_impl(kq::integral_constant<Size>{}); \
 		} \
 	}; \
 \
@@ -68,7 +70,8 @@ struct SegmentedAddress<Segment, SegmentRegister::segment_register, IndexRegiste
 \
 	SegmentedAddress(NoSegmentChange){} \
 \
-	inline static AlmostIterator iter() noexcept { \
+	template<u32 Size> \
+	inline static AlmostIterator<Size> iter() noexcept { \
 		return {}; \
 	} \
 \

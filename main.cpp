@@ -25,7 +25,7 @@ struct Keyboard
 			:
 			: "ax"
 		);
-		return !ret;
+		return ret;
 	}
 
 	static inline u8 getKey() noexcept {
@@ -46,12 +46,12 @@ struct Keyboard
 static inline void sleep(u32 us) noexcept {
 	us *= 1000;
 	asm volatile(
-		"movb 86, %%ah; \n\t"
+		"movb $134, %%ah; \n\t"
 		"movw %0, %%cx; \n\t"
 		"movw %1, %%dx; \n\t"
 		"int $21;"
 		:
-		: "Ri" (us >> 16), "Ri" (us % 0xFFFF)
+		: "Ri" (us >> 16), "Ri" (us & 0xFFFF)
 		: "ax", "cx", "dx"
 	);
 }
@@ -165,12 +165,14 @@ public:
 	Game() noexcept {
 		screen.set_addr(0);
 
+		auto it = screen.iter<16>();
 		for(u16 i = 1920; i --> 0;){
-			auto it = screen.iter();
-			*it = Grass.character;
+//			*it = Grass.character;
+//			*it = screen.makeCharColour(Grass.foreground, Grass.background);
+			*it = Grass.character | (screen.makeCharColour(Grass.foreground, Grass.background) << 8);
 			++it;
-			*it = screen.makeCharColour(Grass.foreground, Grass.background);
 			++it;
+//			screen.writeChar(Grass.character, i - 2, Grass.foreground, Grass.background);
 		}
 
 		Size.set(1);
@@ -193,7 +195,7 @@ public:
 			Direction d = Direction::Right;
 //			u8 n;
 			while(active){
-				sleep(500);
+				sleep(200);
 
 				//			processBall();
 				//			screen.writeChar('0' + n, 3840);
@@ -256,7 +258,7 @@ public:
 //					Tail.set(Tail.get()+1);
 					idx = Tail.get();
 					xy = Blocks.get(idx);
-					Tail.set(idx % Blocks.elements);
+					Tail.set((idx + 1) % Blocks.elements);
 					clearSnakeElement(xy >> 8, xy & 0xF);
 				}
 			}

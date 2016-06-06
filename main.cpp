@@ -2,12 +2,6 @@
 
 #include "video_buffer.hpp"
 
-//template<typename T>
-//inline T& addr(u32 addr){
-//	auto ptr = reinterpret_cast<void*>(addr);
-//	return *static_cast<T*>(ptr);
-//}
-
 static kq::VideoBuffer screen{kq::NoSegmentChange{}};
 static kq::SegmentedAddress<0x9000, kq::SegmentRegister::fs, kq::IndexRegister::si> data{kq::NoSegmentChange{}};
 
@@ -69,7 +63,7 @@ static inline u16 ticks() noexcept {
 	return ret;
 }
 
-Keyboard keyboard;
+static Keyboard keyboard;
 
 struct Brick
 {
@@ -77,9 +71,6 @@ struct Brick
 	u8 y;
 	bool valid;
 };
-
-//struct array_tag{};
-//struct single_tag{};
 
 template<typename T, typename U>
 T& nasty_cast(U&& u){
@@ -120,22 +111,6 @@ struct MemoryEntity<Addr, Size, Elem, 1>{
 		return nasty_cast<type>(data.raw_read<Size>(Addr));
 	}
 };
-
-//template<typename T, typename... Ts>
-
-//template<typename T>
-//auto dbGet(T t){
-//	return data.raw_read<T::size>(T::addr);
-//}
-
-//template<typename T, typename U>
-//void dbSet(T t, U val){
-//	data.raw_write<T::size>(val, T::addr);
-//}
-
-//static inline u8 toHex(u8 x) noexcept {
-//	return x < 10 ? x + '0' : x - 10 + 'A';
-//}
 
 struct Point2D
 {
@@ -182,12 +157,9 @@ public:
 
 		auto it = screen.iter<16>();
 		for(u16 i = 1920; i --> 0;){
-//			*it = Grass.character;
-//			*it = screen.makeCharColour(Grass.foreground, Grass.background);
 			*it = Grass.character | (screen.makeCharColour(Grass.foreground, Grass.background) << 8);
 			++it;
 			++it;
-//			screen.writeChar(Grass.character, i - 2, Grass.foreground, Grass.background);
 		}
 
 		Size.set(1);
@@ -199,88 +171,68 @@ public:
 	}
 
 	static inline void loop() noexcept {
-//		while(true){
-//			screen.writeLine("Press space to start", 24);
-			bool active = false;
-			while(!active){
-				if(keyboard.getKey() == 0x39){
-					active = true;
-				}
+		bool active = false;
+		while(!active){
+			if(keyboard.getKey() == 0x39){
+				active = true;
 			}
-			Direction d = Direction::Right;
-//			u8 n;
-			while(active){
-				sleep(100);
+		}
+		Direction d = Direction::Right;
+		while(active){
+			sleep(100);
 
-				//			processBall();
-				//			screen.writeChar('0' + n, 3840);
-//				n++;
-//				n = n & 0x7;
-				if(keyboard.keyAvaiable()){
-					d = static_cast<Direction>(keyboard.getKey());
-//					u8 k = keyboard.getKey();
-//					screen.writeChar(toHex((k>>4)&0xF), 3840);
-//					screen.writeChar(toHex(k&0xF), 3842);
-				}
-//				processSnake(d);
-//				asm("testw %ax, %ax;");
-				u16 idx = Head.get();
-//				asm("testw %ax, %ax;");
-				auto p = Blocks.get(idx);
+			if(keyboard.keyAvaiable()){
+				d = static_cast<Direction>(keyboard.getKey());
+			}
+			u16 idx = Head.get();
+			auto p = Blocks.get(idx);
 
-				Point2D other = p;
-//				u8 ox, oy;
-				switch(d){
-				case Direction::Up:
-//					other.x = p.x;
-					other.y = p.y-1;
-					break;
-				case Direction::Down:
-//					other.x = p.x;
-					other.y = p.y+1;
-					break;
-				case Direction::Left:
-					other.x = p.x-1;
-//					other.y = p.y;
-					break;
-				case Direction::Right:
-					other.x = p.x+1;
-//					other.y = p.y;
-					break;
-				default:
-					continue;
-				}
-
-				if(other.x > 79 || other.y > 24){
-					active = false;
-					break;
-				}
-
-				u8 next = elementAt(other);
-
-				if(next == Snake.character){
-					active = false;
-					break;
-				}
-
-				writeSnakeElement(other);
-				idx = (idx+1) % Blocks.elements;
-				Head.set(idx);
-				Blocks.set(other, idx);
-
-				if(next != Food.character){
-//					Tail.set(Tail.get()+1);
-					idx = Tail.get();
-					p = Blocks.get(idx);
-					Tail.set((idx + 1) % Blocks.elements);
-					clearSnakeElement(p);
-				}else{
-					spawnFood();
-				}
+			Point2D other = p;
+			switch(d){
+			case Direction::Up:
+				other.y = p.y-1;
+				break;
+			case Direction::Down:
+				other.y = p.y+1;
+				break;
+			case Direction::Left:
+				other.x = p.x-1;
+				break;
+			case Direction::Right:
+				other.x = p.x+1;
+				break;
+			default:
+				continue;
 			}
 
-			while(true);
-//		}
+			if(other.x > 79 || other.y > 24){
+				active = false;
+				break;
+			}
+
+			u8 next = elementAt(other);
+
+			if(next == Snake.character){
+				active = false;
+				break;
+			}
+
+			writeSnakeElement(other);
+			idx = (idx+1) % Blocks.elements;
+			Head.set(idx);
+			Blocks.set(other, idx);
+
+			if(next != Food.character){
+				idx = Tail.get();
+				p = Blocks.get(idx);
+				Tail.set((idx + 1) % Blocks.elements);
+				clearSnakeElement(p);
+			}else{
+				spawnFood();
+			}
+		}
+
+		while(true);
 	}
 
 	static inline void spawnFood() noexcept {
@@ -297,61 +249,6 @@ public:
 		u16 addr = 160 * p.y + 2 * p.x;
 		return screen.raw_read<8>(addr);
 	}
-
-
-//	State processSnake(Direction d) noexcept {
-//		u16 idx = Head.get();
-//		u16 xy = Blocks.get(idx);
-//		u8 x = xy >> 8;
-//		u8 y = xy & 0xF;
-
-//		u8 ox, oy;
-//		switch(d){
-//		case Direction::Up:
-//			ox = x;
-//			oy = y-1;
-//			break;
-//		case Direction::Down:
-//			ox = x;
-//			oy = y+1;
-//			break;
-//		case Direction::Left:
-//			ox = x-1;
-//			oy = y;
-//			break;
-//		case Direction::Right:
-//			ox = x+1;
-//			oy = y;
-//			break;
-//		default:
-//			return State::Alive;
-//		}
-
-
-//		if(ox > 80 || oy > 24){
-//			return State::Dead;
-//		}
-
-//		u8 next = elementAt(ox, oy);
-
-//		if(next == Snake.character){
-//			return State::Dead;
-//		}
-
-//		writeSnakeElement(ox, oy);
-//		idx = (idx+1) % Blocks.elements;
-//		Head.set(idx);
-//		Blocks.set((ox << 8) | oy, idx);
-
-//		if(next == Food.character){
-
-//		}else{
-//			Tail.set(Tail.get()+1);
-//			clearSnakeElement(ox, oy);
-//		}
-
-//		return State::Alive;
-//	}
 
 	static inline void writeSnakeElement(Point2D p) noexcept {
 		u16 addr = 160 * p.y + 2 * p.x;
@@ -372,28 +269,9 @@ public:
 
 static inline void foo()
 {
-//	asm("mov 9000, %bp");
-//	asm("mov %bp, %sp");
-
-
 	Game g;
 
 	g.loop();
-
-//	screen.writeLine("Hello, World!", 0);
-//	screen.raw_write_n("Hello, World!", 14, 0);
-
-//	while(true){
-//		asm("cli");
-//		addr<u8>(base + cnt) = 0x0041;
-//		buf.raw_write<16>(0x941, cnt);
-//		cnt = (cnt + 2) % 4000;
-//		buf
-//		asm("mov $0B000h, %ax");
-//		asm("movw %ax, %ds");
-//		asm("movb $41h, %ds:8000h");
-//		asm("sti");
-//	}
 }
 
 #ifdef YES_MAIN

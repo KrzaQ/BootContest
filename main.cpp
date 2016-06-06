@@ -81,34 +81,43 @@ struct Brick
 //struct array_tag{};
 //struct single_tag{};
 
-template<u16 Addr, u8 Size, u16 Elements = 1>
+template<typename T, typename U>
+T& nasty_cast(U&& u){
+	return *static_cast<T*>(static_cast<void*>(&u));
+}
+
+template<u16 Addr, u8 Size, typename Elem = kq::sized_type<Size>, u16 Elements = 1>
 struct MemoryEntity{
 	constexpr static u16 addr = Addr;
 	constexpr static u8 size = Size;
 	constexpr static u16 elements = Elements;
+	using type = Elem;
+	using storage_type = kq::sized_type<Size>;
 
 	template<typename T>
-	static inline void set(T val, u16 n) noexcept {
-		data.raw_write<Size>(val, Addr + n * Size);
+	static inline void set(T&& val, u16 n) noexcept {
+		data.raw_write<Size>(nasty_cast<storage_type>(val), Addr + n * Size);
 	}
 
-	static inline auto get(u16 n) noexcept {
-		return data.raw_read<Size>(Addr + n * Size);
+	static inline type get(u16 n) noexcept {
+		return nasty_cast<type>(data.raw_read<Size>(Addr + n * Size));
 	}
 };
 
-template<u16 Addr, u8 Size>
-struct MemoryEntity<Addr, Size, 1>{
+template<u16 Addr, u8 Size, typename Elem>
+struct MemoryEntity<Addr, Size, Elem, 1>{
 	constexpr static u16 addr = Addr;
 	constexpr static u8 size = Size;
+	using type = Elem;
+	using storage_type = kq::sized_type<Size>;
 
 	template<typename T>
-	static inline void set(T val) noexcept {
-		data.raw_write<Size>(val, addr);
+	static inline void set(T&& val) noexcept {
+		data.raw_write<Size>(nasty_cast<storage_type>(val), addr);
 	}
 
-	static inline auto get() noexcept {
-		return data.raw_read<Size>(Addr);
+	static inline type get() noexcept {
+		return nasty_cast<type>(data.raw_read<Size>(Addr));
 	}
 };
 
@@ -127,6 +136,12 @@ struct MemoryEntity<Addr, Size, 1>{
 static inline u8 toHex(u8 x) noexcept {
 	return x < 10 ? x + '0' : x - 10 + 'A';
 }
+
+struct Point2D
+{
+	u8 x;
+	u8 y;
+};
 
 class Game
 {
@@ -158,7 +173,7 @@ public:
 	constexpr static auto Size = MemoryEntity<0x100, 16>{};
 	constexpr static auto Head = MemoryEntity<0x102, 16>{};
 	constexpr static auto Tail = MemoryEntity<0x104, 16>{};
-	constexpr static auto Blocks = MemoryEntity<0x200, 16, 256>{};
+	constexpr static auto Blocks = MemoryEntity<0x200, 16, Point2D, 256>{};
 
 
 
@@ -178,8 +193,8 @@ public:
 		Size.set(1);
 		Head.set(0);
 		Tail.set(0);
-		Blocks.set((40 << 8) | 12, 0);
-		writeSnakeElement(40, 12);
+		Blocks.set(Point2D{40,12}, 0);
+		writeSnakeElement({40, 12});
 		spawnFood();
 	}
 
@@ -195,7 +210,7 @@ public:
 			Direction d = Direction::Right;
 //			u8 n;
 			while(active){
-				sleep(200);
+				sleep(100);
 
 				//			processBall();
 				//			screen.writeChar('0' + n, 3840);
@@ -211,55 +226,54 @@ public:
 //				asm("testw %ax, %ax;");
 				u16 idx = Head.get();
 //				asm("testw %ax, %ax;");
-				u16 xy = Blocks.get(idx);
-				u8 x = xy >> 8;
-				u8 y = xy & 0xF;
+				auto p = Blocks.get(idx);
 
-				u8 ox, oy;
+				Point2D other;
+//				u8 ox, oy;
 				switch(d){
 				case Direction::Up:
-					ox = x;
-					oy = y-1;
+					other.x = p.x;
+					other.y = p.y-1;
 					break;
 				case Direction::Down:
-					ox = x;
-					oy = y+1;
+					other.x = p.x;
+					other.y = p.y+1;
 					break;
 				case Direction::Left:
-					ox = x-1;
-					oy = y;
+					other.x = p.x-1;
+					other.y = p.y;
 					break;
 				case Direction::Right:
-					ox = x+1;
-					oy = y;
+					other.x = p.x+1;
+					other.y = p.y;
 					break;
 				default:
 					continue;
 				}
 
-				if(ox > 79 || oy > 24){
+				if(other.x > 79 || other.y > 24){
 					active = false;
 					break;
 				}
 
-				u8 next = elementAt(ox, oy);
+				u8 next = elementAt(other);
 
 				if(next == Snake.character){
 					active = false;
 					break;
 				}
 
-				writeSnakeElement(ox, oy);
+				writeSnakeElement(other);
 				idx = (idx+1) % Blocks.elements;
 				Head.set(idx);
-				Blocks.set((ox << 8) | oy, idx);
+				Blocks.set(other, idx);
 
 				if(next != Food.character){
 //					Tail.set(Tail.get()+1);
 					idx = Tail.get();
-					xy = Blocks.get(idx);
+					p = Blocks.get(idx);
 					Tail.set((idx + 1) % Blocks.elements);
-					clearSnakeElement(xy >> 8, xy & 0xF);
+					clearSnakeElement(p);
 				}
 			}
 
@@ -269,16 +283,16 @@ public:
 
 	void spawnFood() noexcept {
 		for(u16 t = ticks();; t++){
-			char c = elementAt(t >> 8, t & 0xF);
+			char c = elementAt(Point2D{static_cast<u8>(t >> 8), static_cast<u8>(t & 0xF)});
 			if(c == Grass.character){
-				writeFoodElement(t >> 8, t & 0xF);
+				writeFoodElement(Point2D{static_cast<u8>(t >> 8), static_cast<u8>(t & 0xF)});
 				return;
 			}
 		}
 	}
 
-	char elementAt(u8 x, u8 y) noexcept {
-		u16 addr = 160 * y + 2 * x;
+	char elementAt(Point2D p) noexcept {
+		u16 addr = 160 * p.y + 2 * p.x;
 		return screen.raw_read<8>(addr);
 	}
 
@@ -337,18 +351,18 @@ public:
 //		return State::Alive;
 //	}
 
-	void writeSnakeElement(u8 x, u8 y) noexcept {
-		u16 addr = 160 * y + 2 * x;
+	void writeSnakeElement(Point2D p) noexcept {
+		u16 addr = 160 * p.y + 2 * p.x;
 		screen.writeChar(Snake.character, addr, Snake.foreground, Snake.background);
 	}
 
-	void clearSnakeElement(u8 x, u8 y) noexcept {
-		u16 addr = 160 * y + 2 * x;
+	void clearSnakeElement(Point2D p) noexcept {
+		u16 addr = 160 * p.y + 2 * p.x;
 		screen.writeChar(Grass.character, addr, Grass.foreground, Grass.background);
 	}
 
-	void writeFoodElement(u8 x, u8 y) noexcept {
-		u16 addr = 160 * y + 2 * x;
+	void writeFoodElement(Point2D p) noexcept {
+		u16 addr = 160 * p.y + 2 * p.x;
 		screen.writeChar(Food.character, addr, Food.foreground, Food.background);
 	}
 

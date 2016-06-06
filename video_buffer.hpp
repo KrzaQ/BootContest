@@ -30,7 +30,7 @@ struct VideoBuffer : SegmentedAddress<0xB800, SegmentRegister::gs>
 	using SegmentedAddress<0xB800, SegmentRegister::gs>::SegmentedAddress;
 
 	inline static void writeLine(char const* text, u8 line, Colour fg = Colour::LightGray, Colour bg = Colour::Black) noexcept {
-		u16 offset = 80 * line;
+		u16 offset = 160 * line;
 		for(u8 i{}; i < 80 && text[i]; ++i){
 			writeChar(text[i], offset + 2*i, fg, bg);
 		}

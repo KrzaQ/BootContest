@@ -59,10 +59,10 @@ struct SegmentedAddress<Segment, SegmentRegister::segment_register, IndexRegiste
 	}; \
 \
 	SegmentedAddress() noexcept { \
-		asm("mov %0, %%ax;" \
+		asm volatile("mov %0, %%ax;" \
 			"mov %%ax, %%" #segment_register \
 			: \
-			: "r" (Segment) \
+			: "Ri" (Segment) \
 		); \
 	} \
 \
@@ -95,58 +95,58 @@ struct SegmentedAddress<Segment, SegmentRegister::segment_register, IndexRegiste
 	} \
 \
 	inline static void set_addr(u16 addr) noexcept { \
-		asm("movw %0, %%" #index_register : : "r" (addr) : #index_register); \
+		asm volatile("movw %0, %%" #index_register : : "Ri" (addr) : #index_register); \
 	}\
 	\
 	inline static void inc_addr() noexcept { \
-		asm("inc %%" #index_register : : : #index_register); \
+		asm volatile("inc %%" #index_register : : : #index_register); \
 	} \
 \
 	inline static void dec_addr() noexcept { \
-		asm("dec %%" #index_register : : : #index_register); \
+		asm volatile("dec %%" #index_register : : : #index_register); \
 	} \
 \
 \
 private: \
 	inline static void raw_write_impl(kq::integral_constant<8>, u8 val) noexcept { \
-		asm("movb %0, %%" #segment_register ":0(%%" #index_register ")" \
+		asm volatile("movb %0, %%" #segment_register ":0(%%" #index_register ")" \
 			: \
-			: "r" (val) \
+			: "Ri" (val) \
 			: #index_register \
 		); \
 	} \
  \
 	inline static void raw_write_impl(kq::integral_constant<16>, u16 val) noexcept { \
-		asm("movw %0, %%" #segment_register ":0(%%" #index_register ")" \
+		asm volatile("movw %0, %%" #segment_register ":0(%%" #index_register ")" \
 			: \
-			: "r" (val) \
+			: "Ri" (val) \
 			: #index_register \
 		); \
 	} \
 \
 	inline static void raw_write_impl(kq::integral_constant<32>, u32 val) noexcept { \
-		asm("movl %0, %%" #segment_register " :0(%%" #index_register ")" \
+		asm volatile("movl %0, %%" #segment_register " :0(%%" #index_register ")" \
 			: \
-			: "r" (val) \
+			: "Ri" (val) \
 			: #index_register \
 		); \
 	} \
 \
 	inline static u8 raw_read_impl(kq::integral_constant<8>) noexcept { \
 		u8 ret; \
-		asm("movb %%" #segment_register " :0(%%" #index_register "), %0" : "=g" (ret)); \
+		asm volatile("movb %%" #segment_register " :0(%%" #index_register "), %0" : "=q" (ret)); \
 		return ret; \
 	} \
 \
 	inline static u16 raw_read_impl(kq::integral_constant<16>) noexcept { \
 		u16 ret; \
-		asm("movb %%" #segment_register " :0(%%" #index_register "), %0" : "=g" (ret)); \
+		asm  volatile("movw %%" #segment_register " :0(%%" #index_register "), %0" : "=q" (ret)); \
 		return ret; \
 	} \
 \
 	inline static u32 raw_read_impl(kq::integral_constant<32>) noexcept { \
 		u32 ret; \
-		asm("movl %%" #segment_register " :0(%%" #index_register "), %0" : "=g" (ret)); \
+		asm volatile("movl %%" #segment_register " :0(%%" #index_register "), %0" : "=q" (ret)); \
 		return ret; \
 	} \
 };

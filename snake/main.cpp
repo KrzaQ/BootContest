@@ -7,7 +7,7 @@ static kq::SegmentedAddress<0x9000, kq::SegmentRegister::fs, kq::IndexRegister::
 
 struct Keyboard
 {
-	static inline bool keyAvaiable() noexcept {
+	static inline bool keyAvailable() noexcept {
 		u8 ret = 1;
 		asm volatile(
 			"movb $1, %%ah; \n\t"
@@ -141,9 +141,9 @@ public:
 
 	using Colour = kq::VideoBuffer::Colour;
 
-	constexpr static Entity Food = { '+', Colour::Brown, Colour::LightGreen };
+	constexpr static Entity Food = { '#', Colour::DarkGray, Colour::LightGreen };
 	constexpr static Entity Grass = { ' ', Colour::LightGreen, Colour::LightGreen };
-	constexpr static Entity Snake = { 'O', Colour::Black, Colour::LightBlue };
+	constexpr static Entity Snake = { 'O', Colour::Black, Colour::LightGray };
 
 	constexpr static auto Size = MemoryEntity<0x100, 16>{};
 	constexpr static auto Head = MemoryEntity<0x102, 16>{};
@@ -181,7 +181,7 @@ public:
 		while(active){
 			sleep(100);
 
-			if(keyboard.keyAvaiable()){
+			if(keyboard.keyAvailable()){
 				d = static_cast<Direction>(keyboard.getKey());
 			}
 			u16 idx = Head.get();

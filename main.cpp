@@ -61,7 +61,7 @@ static inline u16 ticks() noexcept {
 	asm volatile(
 		"xor %%ax, %%ax; \n\t"
 		"int $26; \n\t"
-		"movw %%cx, %0; \n\t"
+		"movw %%dx, %0; \n\t"
 		: "=q" (ret)
 		:
 		: "ax", "cx", "dx"
@@ -198,7 +198,7 @@ public:
 		spawnFood();
 	}
 
-	void loop() noexcept {
+	static inline void loop() noexcept {
 //		while(true){
 //			screen.writeLine("Press space to start", 24);
 			bool active = false;
@@ -228,24 +228,24 @@ public:
 //				asm("testw %ax, %ax;");
 				auto p = Blocks.get(idx);
 
-				Point2D other;
+				Point2D other = p;
 //				u8 ox, oy;
 				switch(d){
 				case Direction::Up:
-					other.x = p.x;
+//					other.x = p.x;
 					other.y = p.y-1;
 					break;
 				case Direction::Down:
-					other.x = p.x;
+//					other.x = p.x;
 					other.y = p.y+1;
 					break;
 				case Direction::Left:
 					other.x = p.x-1;
-					other.y = p.y;
+//					other.y = p.y;
 					break;
 				case Direction::Right:
 					other.x = p.x+1;
-					other.y = p.y;
+//					other.y = p.y;
 					break;
 				default:
 					continue;
@@ -283,7 +283,7 @@ public:
 //		}
 	}
 
-	void spawnFood() noexcept {
+	static inline void spawnFood() noexcept {
 		for(u16 t = ticks();; t++){
 			char c = elementAt(Point2D{static_cast<u8>(t >> 8), static_cast<u8>(t & 0xF)});
 			if(c == Grass.character){
@@ -293,7 +293,7 @@ public:
 		}
 	}
 
-	char elementAt(Point2D p) noexcept {
+	static inline char elementAt(Point2D p) noexcept {
 		u16 addr = 160 * p.y + 2 * p.x;
 		return screen.raw_read<8>(addr);
 	}
@@ -353,24 +353,21 @@ public:
 //		return State::Alive;
 //	}
 
-	void writeSnakeElement(Point2D p) noexcept {
+	static inline void writeSnakeElement(Point2D p) noexcept {
 		u16 addr = 160 * p.y + 2 * p.x;
 		screen.writeChar(Snake.character, addr, Snake.foreground, Snake.background);
 	}
 
-	void clearSnakeElement(Point2D p) noexcept {
+	static inline void clearSnakeElement(Point2D p) noexcept {
 		u16 addr = 160 * p.y + 2 * p.x;
 		screen.writeChar(Grass.character, addr, Grass.foreground, Grass.background);
 	}
 
-	void writeFoodElement(Point2D p) noexcept {
+	static inline void writeFoodElement(Point2D p) noexcept {
 		u16 addr = 160 * p.y + 2 * p.x;
 		screen.writeChar(Food.character, addr, Food.foreground, Food.background);
 	}
 
-	void drawBall() noexcept {
-
-	}
 };
 
 static inline void foo()

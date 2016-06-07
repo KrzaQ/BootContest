@@ -10,21 +10,12 @@
   int 15h
 %endmacro
 
-%macro getKeyIfAvailable 0
-  mov ah, 1
-  int 16h
-  xor ax, ax
-  jz %%nope
-  int 16h
-  mov ax, ah
-  %%nope:
-%endmacro
-
 start:
-  
+  call getKeyIfAvailable
+  test ax
 
 
-  sleep 1000
+  ; sleep 1000
   ; ; Load from floppy stage 2.
   ; ; DL == already set by BIOS
   ; ; AX -- 16 bits, AH AL -- 8 bits
@@ -59,12 +50,20 @@ toHex:
 toHexLetter:
   cmp al, 10
   add al, '0'
-  jl no_hex_letter
+  jl notHex
   add al, 7
-  no_hex_letter:
+  .notHex:
   ret
 
-
+getKeyIfAvailable:
+  mov ah, 1
+  int 16h
+  xor ax, ax
+  jz nope
+  int 16h
+  mov ax, ah
+  .nope:
+  ret
 
 ; epilogue:
 ; %if ($ - $$) > 510

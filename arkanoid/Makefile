@@ -1,5 +1,9 @@
+FMT=bin
+
+OPT=-Ox
+
 all: main.asm
-	nasm main.asm -o kq.bin
+	nasm main.asm -f $(FMT) $(OPT) -o kq.bin
 
 
 show: all

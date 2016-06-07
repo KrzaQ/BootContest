@@ -9,11 +9,30 @@
   mov dx, (%1*1000) % 0FFh
   int 15h
 %endmacro
+  
+  mov ax, 0B800h
+  mov gs, ax
+  ; mov gs, 0B800h
 
 start:
   call getKeyIfAvailable
-  test ax
+  ; test ax
 
+  cmp ax, 0h
+  jz .nope
+
+  shr ax, 8
+
+  call toHex
+
+  mov [gs:0], dl
+  mov byte [gs:1], 0x0F
+  mov [gs:2], cl
+  mov byte [gs:3], 0x0F
+
+
+  .nope:
+  jmp start
 
   ; sleep 1000
   ; ; Load from floppy stage 2.
@@ -40,17 +59,26 @@ start:
 
 ; sleep:
 
+initGame:
+  ret
+
 toHex:
   mov bl, al
   and al, 0Fh
-  
-  ; cmp 
-
-
-toHexLetter:
-  cmp al, 10
+  call .letter
+  xor cx, cx
+  mov cl, al
+  mov al, bl
+  shr al, 4
+  call .letter
+  ; shl ax, 8
+  ; add ax, cx
+  mov dl, al
+  ret
+.letter:
   add al, '0'
-  jl notHex
+  cmp al, 10+'0'
+  jl .notHex
   add al, 7
   .notHex:
   ret
@@ -59,10 +87,14 @@ getKeyIfAvailable:
   mov ah, 1
   int 16h
   xor ax, ax
-  jz nope
+  jnz .nope
   int 16h
-  mov ax, ah
+  shr ax, 8
   .nope:
+  ret
+
+writeChar:
+  
   ret
 
 ; epilogue:

@@ -5,8 +5,8 @@
 
 %macro sleep 1
   mov ah, 86h
-  mov cx, (%1*1000) >> 16
-  mov dx, (%1*1000) % 0FFh
+  mov cx, (((%1)*1000) >> 16)
+  mov dx, (((%1)*1000) % 0xFFFF)
   int 15h
 %endmacro
   
@@ -18,20 +18,23 @@ start:
   call getKeyIfAvailable
   ; test ax
 
+  ; mov ax, 7Fh
   cmp ax, 0h
   jz .nope
 
-  shr ax, 8
+  ; shr ax, 8
 
-  call toHex
+  ; call toHex
 
-  mov [gs:0], dl
-  mov byte [gs:1], 0x0F
-  mov [gs:2], cl
-  mov byte [gs:3], 0x0F
+  ; mov [gs:0], dl
+  ; mov byte [gs:1], 0x0F
+  ; mov [gs:2], cl
+  ; mov byte [gs:3], 0x0F
 
 
   .nope:
+  sleep 50
+
   jmp start
 
   ; sleep 1000
@@ -84,13 +87,18 @@ toHex:
   ret
 
 getKeyIfAvailable:
-  mov ah, 1
+  mov ax, 0x100
+  ; mov ah, 1
   int 16h
+  ; xor ax, ax
+  jz .nope
   xor ax, ax
-  jnz .nope
   int 16h
   shr ax, 8
+  ret
   .nope:
+  ; dec ah
+  xor ax, ax
   ret
 
 writeChar:

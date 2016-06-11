@@ -7,6 +7,7 @@ all: main.asm
 
 
 show: all
+	@echo "bytes:" `cat kq.bin|wc -c`
 	@cat kq.bin|hexdump -C
 	@ndisasm kq.bin
 

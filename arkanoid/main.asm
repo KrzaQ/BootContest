@@ -9,13 +9,37 @@
   mov dx, (((%1)*1000) % 0xFFFF)
   int 15h
 %endmacro
-  
-  mov ax, 0B800h
-  mov gs, ax
-  ; mov gs, 0B800h
 
+columns equ 20
+rows equ 10
+
+points_w equ 0x0
+lives_w equ points_w + 2
+ball_x_dw equ lives_w + 2
+ball_y_dw equ ball_x_dw + 4
+ball_x_speed_dw equ ball_y_dw + 4
+ball_y_speed_dw equ ball_x_speed_dw + 4
+blocks equ ball_y_speed_dw + 4
+
+block_empty equ 0
+block_green equ 1
+block_red equ 2
+
+  
 start:
+  mov ax, 0xB800
+  mov gs, ax
+  mov ax, 0x8000
+  mov es, ax
+
+  call initGame
+
+game:
   call getKeyIfAvailable
+
+  push ax
+  call updateGame
+
   ; test ax
 
   ; mov ax, 7Fh
@@ -37,32 +61,47 @@ start:
 
   jmp start
 
-  ; sleep 1000
-  ; ; Load from floppy stage 2.
-  ; ; DL == already set by BIOS
-  ; ; AX -- 16 bits, AH AL -- 8 bits
-  ; ; EAX -- AX
-  
-  ; mov ax, 0x2000 ; 0x2000:0x0000
-  ; mov es, ax
-  ; xor bx, bx ; bx == 0
-
-  ; mov ah, 2  ; read sectors into memory
-  ; mov al, 3  ; 1337 stage2  3 * 512 
-  ; mov ch, 0
-  ; mov cl, 2  ; sectors start from 1, or so they say ;)
-  ; mov dh, 0
-
-  ; int 13h
-  
-  ; ; Jump to stage 2
-  ; jmp word 0x2000:0x0000
-
-  ; ; The CPU doesn't reach here. Ever. Hopefully.
-
-; sleep:
 
 initGame:
+  mov cx, rows
+  .loop:
+  ; save cx
+  push cx
+  ; push arg
+  push cx
+  call initRow
+  pop cx
+  dec cx
+  test cx, cx
+  jg .loop
+  ret
+
+initRow:
+  pop ax
+  push bx
+  ; mul ax, columns
+  mov bx, columns
+  mul bx
+  mov bx, ax
+  mov cx, columns-1
+  add bx, blocks
+  add bx, cx
+  .loop:
+  ; mov byte [es:bx + cx], block_green
+  mov byte [es: bx], block_green
+  dec cx
+  dec bx
+  test cx, cx
+  jnz .loop
+  pop bx
+  ret
+
+updateGame:
+  pop ax
+
+; update pallet
+
+
   ret
 
 toHex:

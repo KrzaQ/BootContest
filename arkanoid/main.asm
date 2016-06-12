@@ -37,13 +37,12 @@ start:
 game:
   call getKeyIfAvailable
 
-  push ax
+  ; push ax
   call updateGame
 
-  ; test ax
 
   ; mov ax, 7Fh
-  cmp ax, 0h
+  cmp al, 0h
   jz .nope
 
   ; shr ax, 8
@@ -63,46 +62,68 @@ game:
 
 
 initGame:
-  mov cx, rows
+  mov cx, rows-1
   .loop:
   ; save cx
   push cx
-  ; push arg
-  push cx
+  mov ax, cx
   call initRow
   pop cx
   dec cx
-  test cx, cx
   jg .loop
   ret
 
 initRow:
-  pop ax
+  ; expects row number in ax
   push bx
-  ; mul ax, columns
-  mov bx, columns
-  mul bx
-  mov bx, ax
-  mov cx, columns-1
-  add bx, blocks
-  add bx, cx
+  mov bx, blocks
+  mov cx, rows * columns
   .loop:
-  ; mov byte [es:bx + cx], block_green
   mov byte [es: bx], block_green
+  inc bx
   dec cx
-  dec bx
-  test cx, cx
   jnz .loop
   pop bx
   ret
 
 updateGame:
-  pop ax
+  
 
-; update pallet
+  mov bx, blocks
+  mov cx, rows * columns
+  xor di, di
 
+  .blockLoop:
+  mov al, [es:bx]
+  mov dl, 4
+  .innerBlockLoop:
+  cmp al, block_green
+  je .drawGreen
+  ; cmp al, block_red
+  ; je .drawRed
+
+  ; .drawBlank
+
+  mov word [gs:di], 0x442B
+
+  jmp .drawn
+
+  .drawGreen:
+  mov word [gs:di], 0x2220
+  ; .drawRed:
+
+  .drawn:
+  inc di
+  inc di
+  dec dl
+  jnz .innerBlockLoop
+  
+  inc bx
+  dec cx
+  jnz .blockLoop
 
   ret
+
 
 toHex:
   mov bl, al
